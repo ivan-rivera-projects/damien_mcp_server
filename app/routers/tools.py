@@ -20,17 +20,22 @@ from ..models.mcp_protocol import ( # Changed from ..models.mcp
     MCPExecuteToolServerRequest,    # Renamed from MCPExecuteToolRequest
     MCPExecuteToolServerResponse    # Renamed from MCPExecuteToolResponse
 )
-from ..models.tools import ( # New import for tool-specific params
-    ApplyRulesParams,
-    AddRuleParams,
-    DeleteRuleParams,
-    DeleteEmailsPermanentlyParams,
-    # We'll also need ListEmailsParams, GetEmailDetailsParams, etc. here as they are used
-    ListEmailsParams,
-    GetEmailDetailsParams,
-    TrashEmailsParams,
-    LabelEmailsParams,
-    MarkEmailsParams
+from ..models.tools import (
+    ListEmailsParams, ListEmailsOutput,
+    GetEmailDetailsParams, GetEmailDetailsOutput,
+    TrashEmailsParams, TrashEmailsOutput,
+    LabelEmailsParams, LabelEmailsOutput,
+    MarkEmailsParams, MarkEmailsOutput,
+    ApplyRulesParams, ApplyRulesOutput,
+    # For ListRulesOutput, AddRuleOutput, DeleteRuleOutputData, DeleteEmailsPermanentlyOutputData
+    # we used specific Pydantic models in tools.py, so we need to import them.
+    # Assuming ListRulesOutput is a model, not just a type alias anymore.
+    # If they are still type aliases, this part of the import would be different.
+    # Based on the previous diff, these should be actual Pydantic models now.
+    ListRulesOutput, # Was ListRulesOutputData = List[Dict[str, Any]]
+    AddRuleParams, AddRuleOutput, # Was AddRuleOutputData = Dict[str, Any]
+    DeleteRuleParams, DeleteRuleOutput, # Was DeleteRuleOutputData (BaseModel)
+    DeleteEmailsPermanentlyParams, DeleteEmailsPermanentlyOutput # Was DeleteEmailsPermanentlyOutputData (BaseModel)
 )
 
 # Set up logger
@@ -328,53 +333,63 @@ async def list_tools_endpoint():
     tools = [
         {
             "name": "damien_list_emails",
-            "description": "Lists email messages based on a query, with support for pagination.",
-            "input_schema": ListEmailsParams.model_json_schema()
+            "description": "Lists email messages based on a query, with support for pagination. Provides summaries including ID, thread ID, subject, sender, snippet, date, attachment status, and labels.",
+            "input_schema": ListEmailsParams.model_json_schema(),
+            "output_schema": ListEmailsOutput.model_json_schema()
         },
         {
             "name": "damien_get_email_details",
-            "description": "Retrieves the full details of a specific email message.",
-            "input_schema": GetEmailDetailsParams.model_json_schema()
+            "description": "Retrieves the full details of a specific email message, including headers, payload (body, parts), and raw content based on the specified format.",
+            "input_schema": GetEmailDetailsParams.model_json_schema(),
+            "output_schema": GetEmailDetailsOutput.model_json_schema()
         },
         {
             "name": "damien_trash_emails",
-            "description": "Moves specified emails to the trash folder.",
-            "input_schema": TrashEmailsParams.model_json_schema()
+            "description": "Moves specified emails to the trash folder. Returns a count of trashed emails and a status message.",
+            "input_schema": TrashEmailsParams.model_json_schema(),
+            "output_schema": TrashEmailsOutput.model_json_schema()
         },
         {
             "name": "damien_label_emails",
-            "description": "Adds or removes labels from specified emails.",
-            "input_schema": LabelEmailsParams.model_json_schema()
+            "description": "Adds or removes specified labels from emails. Returns a count of modified emails and a status message.",
+            "input_schema": LabelEmailsParams.model_json_schema(),
+            "output_schema": LabelEmailsOutput.model_json_schema()
         },
         {
             "name": "damien_mark_emails",
-            "description": "Marks specified emails as read or unread.",
-            "input_schema": MarkEmailsParams.model_json_schema()
+            "description": "Marks specified emails as read or unread. Returns a count of modified emails and a status message.",
+            "input_schema": MarkEmailsParams.model_json_schema(),
+            "output_schema": MarkEmailsOutput.model_json_schema()
         },
         {
             "name": "damien_apply_rules",
-            "description": "Applies filtering rules to emails in your Gmail account.",
-            "input_schema": ApplyRulesParams.model_json_schema()
+            "description": "Applies filtering rules to emails in your Gmail account based on various criteria. Can be run in dry-run mode. Returns a detailed summary of actions taken or that would be taken.",
+            "input_schema": ApplyRulesParams.model_json_schema(),
+            "output_schema": ApplyRulesOutput.model_json_schema()
         },
         {
             "name": "damien_list_rules",
-            "description": "Lists all configured filtering rules.",
-            "input_schema": {} # No parameters needed
+            "description": "Lists all configured filtering rules in Damien, including their definitions (name, conditions, actions).",
+            "input_schema": {}, # No parameters needed for listing all rules
+            "output_schema": ListRulesOutput.model_json_schema()
         },
         {
             "name": "damien_add_rule",
-            "description": "Adds a new filtering rule.",
-            "input_schema": AddRuleParams.model_json_schema()
+            "description": "Adds a new filtering rule to Damien. Expects a full rule definition and returns the created rule, including its server-generated ID and timestamps.",
+            "input_schema": AddRuleParams.model_json_schema(),
+            "output_schema": AddRuleOutput.model_json_schema()
         },
         {
             "name": "damien_delete_rule",
-            "description": "Deletes a rule by its ID or name.",
-            "input_schema": DeleteRuleParams.model_json_schema()
+            "description": "Deletes a filtering rule from Damien by its ID or name. Returns a status message and the identifier of the deleted rule.",
+            "input_schema": DeleteRuleParams.model_json_schema(),
+            "output_schema": DeleteRuleOutput.model_json_schema()
         },
         {
             "name": "damien_delete_emails_permanently",
-            "description": "PERMANENTLY deletes specified emails. This action is irreversible.",
-            "input_schema": DeleteEmailsPermanentlyParams.model_json_schema()
+            "description": "PERMANENTLY deletes specified emails from Gmail. This action is irreversible and emails cannot be recovered. Returns a count of deleted emails and a status message.",
+            "input_schema": DeleteEmailsPermanentlyParams.model_json_schema(),
+            "output_schema": DeleteEmailsPermanentlyOutput.model_json_schema()
         }
     ]
     return tools

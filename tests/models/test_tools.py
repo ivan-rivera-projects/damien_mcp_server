@@ -164,10 +164,11 @@ def test_add_rule_params():
         "is_enabled": True,
         "conditions": [{"field": "subject", "operator": "contains", "value": "Test"}],
         "condition_conjunction": "AND",
-        "actions": [{"type": "add_label", "label_name": "TestLabel"}]
+        "actions": [{"type": "add_label", "parameters": {"label_name": "TestLabel"}}]
     }
     params = AddRuleParams(rule_definition=rule_def)
-    assert params.rule_definition == rule_def
+    # Compare the dictionary representation of the Pydantic model
+    assert params.rule_definition.model_dump() == rule_def
 
 
 def test_delete_rule_params():
