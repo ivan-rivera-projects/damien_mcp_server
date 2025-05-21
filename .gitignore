@@ -13,3 +13,6 @@ htmlcov/
 *.log
 *.sqlite
 logs/
+# Files with sensitive API keys
+tools/claude_api_test_simple.py
+tools/claude_api_test_v2.py
